@@ -1,0 +1,1 @@
+# slsa-github-generator-ko

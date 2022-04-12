@@ -1,4 +1,4 @@
-module laurentsimon/slsa-github-generator-go
+module laurentsimon/slsa-github-generator-ko/builder
 
 go 1.18
 

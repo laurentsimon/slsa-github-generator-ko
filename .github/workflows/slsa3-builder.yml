@@ -112,7 +112,7 @@ jobs:
             # https://go.dev/ref/mod#build-commands.
             go build -mod=vendor -o "$BUILDER_BINARY"
             BUILDER_DIGEST=$(sha256sum "$BUILDER_BINARY" | awk '{print $1}')
-            echo "::set-output name=go-builder-sha256::$BUILDER_DIGEST"
+            echo "::set-output name=sha256::$BUILDER_DIGEST"
             echo "hash of $BUILDER_BINARY is $BUILDER_DIGEST"
 
       - name: Upload the builder

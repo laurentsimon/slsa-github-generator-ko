@@ -1,0 +1,242 @@
+name: Ko Builder
+
+permissions:
+  contents: read
+
+env:
+  # Builder
+  BUILDER_BINARY: builder
+  # Registries.
+  DOCKER_REGISTRY: docker.io
+  GITHUB_REGISTRY: ghcr.io
+
+###################################################################
+#                                                                 #
+#            Input and output argument definitions                #
+#                                                                 #
+###################################################################
+on:
+  workflow_call:
+    secrets:
+      password:
+        description: "Password to log in the registry"
+        required: true
+    inputs:
+      envs:
+        description: "Environment variables to pass to the builder"
+        required: false
+        type: string
+      args:
+        description: "Arguments to pass to the 'ko publish'"
+        required: false
+        type: string
+      username:
+        description: "Username to log in the registry"
+        required: true
+        type: string
+    outputs:
+      image:
+        description: "The full path to the generated container image"
+        value: ${{ jobs.build-release.outputs.image }}
+
+
+jobs:
+  detect-env:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # Needed to detect the current reusable repository and ref.
+      contents: read
+    outputs:
+      builder_repo: ${{ steps.detect.outputs.builder_repo }}
+      builder_ref: ${{ steps.detect.outputs.builder_ref }}
+    steps:
+      - name: Detect the builder ref
+        id: detect
+        shell: bash
+        run: | 
+          status_code=$(curl -sS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=${{ github.repository }}/ko-builder" -o jwt.json -w '%{http_code}')
+          if [[ $status_code -ne 200 ]]; then
+              error_msg=$(jq -r .message jwt.json 2>/dev/null || echo 'unknown error')
+              echo "Failed to get OIDC token from GitHub, response $status_code: $error_msg"
+              exit 1;
+          fi
+          export WORKFLOW_REF=$(cat jwt.json | jq -r '.value' | cut -d "." -f2 | base64 -d | jq -r '.job_workflow_ref')
+          if [ -z $WORKFLOW_REF ]; then
+            echo "OIDC token parsing failure: job_workflow_ref could not be retrieved"
+            exit 1;
+          fi
+          echo "::set-output name=builder_repo::$(echo $WORKFLOW_REF | cut -d "@" -f1 | cut -d '/' -f1-2)"
+          echo "::set-output name=builder_ref::$(echo $WORKFLOW_REF | cut -d "@" -f2)"
+          
+  build-builder:
+    runs-on: ubuntu-latest
+    needs: detect-env
+    permissions:
+      contents: read
+    outputs:
+      builder-sha256: ${{ steps.build-builder.outputs.sha256 }}
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846 # v2.3.4
+        with:
+          fetch-depth: 0
+          repository: "${{ needs.detect-env.outputs.builder_repo }}"
+          ref: "${{ needs.detect-env.outputs.builder_ref }}"
+  
+      - name: Build builder
+        id: build-builder
+        run: |
+          set -euo pipefail
+          
+          echo "building the builder"
+          echo "::set-output name=sha256::abcedfg"
+          
+      - name: Upload builder
+        run: |
+          set -euo pipefail
+          
+          echo "TODO: upload builder"
+      
+  build-dry:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: [build-builder]
+    env:
+      BUILDER_SHA256: "${{ needs.build-builder.outputs.builder-sha256 }}"
+    outputs:
+      command: ${{ steps.build-dry.outputs.command }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        
+      - name: Dry build
+        id: build-dry
+        run: |
+          set -euo pipefail
+          
+          # TODO: verify hash
+          echo "running the builder ${{ env.BUILDER_BINARY }} with hash "$BUILDER_SHA256""
+          echo "::set-output name=command::this is a command!"
+        
+  build-release:
+    runs-on: ubuntu-latest
+    needs: [build-builder]
+    permissions:
+      contents: read
+      packages: write
+    env:
+      UNTRUSTED_PASSWORD: ${{ secrets.password }}
+      UNTRUSTED_USERNAME: ${{ inputs.username }}
+      UNTRUSTED_ARGS: ${{ inputs.args }}
+    outputs:
+      image: ${{ steps.build-push.outputs.image }}
+    steps:
+      #TODO: step to verify registry
+      - name: Checkout
+        uses: actions/checkout@v2
+        
+       # Note: downlaoading and pinning the download seems better
+       # than adding this dependency. Need to look how the install works
+       # remko/dsadmin/blob/7a6939179bc56b1be28cada040f2b4a148e3e14a/.github/workflows/publish-release.yml
+      - name: Setup Ko
+        uses: imjasonh/setup-ko@v0.4
+    
+      - name: Login
+        run: |
+          set -euo pipefail
+          
+          # TODO: parse env variables and extract KO_DOCKER_REPO. This variable is always
+          # set. If there's a '/', the registry will be the first part; otherwise it
+          # will be set to docker.io
+          ko login "${{ env.DOCKER_REGISTRY }}" -u "$UNTRUSTED_USERNAME" -p "$UNTRUSTED_PASSWORD"
+  
+      - name: Build and push
+        id: build-push
+        run: |
+          set -euo pipefail
+          
+          # Note: this will be done in Go via an exec and to set up env variables.
+          # Note 2: we will use a dry-run to generate the command for provenance in a separate job.
+          # Note 3: we will use the value provided by the user and set env autoatically, so we
+          # won't need to set this explicitely.
+          export KO_DOCKER_REPO="${{ env.DOCKER_REGISTRY }}/$UNTRUSTED_USERNAME"
+          
+          #TODO: take these arguments from args and use exec in Go.
+          IMAGE=$(ko publish $UNTRUSTED_ARGS)
+          
+          echo "::set-output name=image::$IMAGE"
+  
+  provenance:
+    runs-on: ubuntu-latest
+    needs: [build-dry,build-release]
+    permissions:
+      packages: write
+      contents: read
+      id-token: write
+    env:
+      UNTRUSTED_IMAGE: "${{ needs.build-release.outputs.image }}"
+      UNTRUSTED_COMMAND: "${{ needs.build-dry.outputs.command }}"
+      UNTRUSTED_PASSWORD: "${{ secrets.password }}"
+      UNTRUSTED_USERNAME: "${{ inputs.username }}"
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        
+      - name: Generate predicate
+        id: gen-predicate
+        run: |
+          set -euo pipefail
+          
+          echo "image is: $UNTRUSTED_IMAGE"
+          
+          echo "TODO: generate provenance dynamically"
+          echo "command: $UNTRUSTED_COMMAND"
+          
+          #TODO: generate PROJECT dynamically using the URL
+          # testing. Use a local file containing provenance.
+          IMAGE_SHA256=$(echo $UNTRUSTED_IMAGE | cut -d "@" -f2 | cut -d ":" -f2)
+          IMAGE_PROVENANCE="predicate-sha256-$IMAGE_SHA256.json"
+          
+          echo "provenance is: $IMAGE_PROVENANCE"
+          
+          export DATA="ewogICJidWlsZGVyIjogewogICAgImlkIjogImh0dHBzOi8vZ2l0aHViLmNvbS9zbHNhLWZyYW1ld29yay9zbHNhLWdpdGh1Yi1nZW5lcmF0b3ItZ28vLmdpdGh1Yi93b3JrZmxvd3MvYnVpbGRlci55bWxAcmVmcy9oZWFkcy9tYWluIgogIH0sCiAgImJ1aWxkVHlwZSI6ICJodHRwczovL2dpdGh1Yi5jb20vc2xzYS1mcmFtZXdvcmsvc2xzYS1naXRodWItZ2VuZXJhdG9yLWdvQHYxIiwKICAiaW52b2NhdGlvbiI6IHsKICAgICJjb25maWdTb3VyY2UiOiB7CiAgICAgICJ1cmkiOiAiZ2l0K2h0dHBzOi8vZ2l0aHViLmNvbWxhdXJlbnRzaW1vbi9zbHNhLW9uLWdpdGh1Yi10ZXN0QHJlZnMvaGVhZHMvbWFpbi5naXQiLAogICAgICAiZGlnZXN0IjogewogICAgICAgICJzaGExIjogImQzZmQ5NDgyZTY4ZDI3NmU2OWMwYThiM2Y3ZWFhYmIzYjllNTY2OTUiCiAgICAgIH0sCiAgICAgICJlbnRyeVBvaW50IjogIlNMU0EgUmVsZWFzZSIKICAgIH0sCiAgICAicGFyYW1ldGVycyI6IHsKICAgICAgInZlcnNpb24iOiAxLAogICAgICAicmVmX3R5cGUiOiAiYnJhbmNoIiwKICAgICAgInJlZiI6ICJyZWZzL2hlYWRzL21haW4iLAogICAgICAiYmFzZV9yZWYiOiAiIiwKICAgICAgImhlYWRfcmVmIjogIiIsCiAgICAgICJhY3RvciI6ICJsYXVyZW50c2ltb24iLAogICAgICAic2hhMSI6ICJkM2ZkOTQ4MmU2OGQyNzZlNjljMGE4YjNmN2VhYWJiM2I5ZTU2Njk1IgogICAgfSwKICAgICJlbnZpcm9ubWVudCI6IHsKICAgICAgImFyY2giOiAiYW1kNjQiLAogICAgICAiZ2l0aHViX2V2ZW50X25hbWUiOiAid29ya2Zsb3dfZGlzcGF0Y2giLAogICAgICAiZ2l0aHViX3J1bl9hdHRlbXB0IjogIjEiLAogICAgICAiZ2l0aHViX3J1bl9pZCI6ICIyMDkwODQxMjYzIiwKICAgICAgImdpdGh1Yl9ydW5fbnVtYmVyIjogIjE4IiwKICAgICAgIm9zIjogInVidW50dSIKICAgIH0KICB9LAogICJidWlsZENvbmZpZyI6IHsKICAgICJ2ZXJzaW9uIjogMSwKICAgICJzdGVwcyI6IFsKICAgICAgewogICAgICAgICJjb21tYW5kIjogWwogICAgICAgICAgIi9vcHQvaG9zdGVkdG9vbGNhY2hlL2dvLzEuMTcuOC94NjQvYmluL2dvIiwKICAgICAgICAgICJidWlsZCIsCiAgICAgICAgICAiLW1vZD12ZW5kb3IiLAogICAgICAgICAgIi10cmltcGF0aCIsCiAgICAgICAgICAiLXRhZ3M9bmV0Z28iLAogICAgICAgICAgIi1vIiwKICAgICAgICAgICJiaW5hcnktbGludXgtYW1kNjQiCiAgICAgICAgXSwKICAgICAgICAiZW52IjogWwogICAgICAgICAgIkdPT1M9bGludXgiLAogICAgICAgICAgIkdPQVJDSD1hbWQ2NCIsCiAgICAgICAgICAiR08xMTFNT0RVTEU9b24iLAogICAgICAgICAgIkNHT19FTkFCTEVEPTAiCiAgICAgICAgXQogICAgICB9CiAgICBdCiAgfSwKICAibWF0ZXJpYWxzIjogWwogICAgewogICAgICAidXJpIjogImdpdCtsYXVyZW50c2ltb24vc2xzYS1vbi1naXRodWItdGVzdC5naXQiLAogICAgICAiZGlnZXN0IjogewogICAgICAgICJzaGExIjogImQzZmQ5NDgyZTY4ZDI3NmU2OWMwYThiM2Y3ZWFhYmIzYjllNTY2OTUiCiAgICAgIH0KICAgIH0KICBdCn0="
+          #echo "TODO: upload artifact"
+          UNTRUSTED_PROVENANCE_DATA=$(echo -n "$DATA" | base64 -d)
+          echo -n "$UNTRUSTED_PROVENANCE_DATA" > "$IMAGE_PROVENANCE"
+          
+          echo "::set-output name=filename::$IMAGE_PROVENANCE"
+          echo "::set-output name=image::$UNTRUSTED_IMAGE"
+          
+      # Note: here we need packages permissions
+      # TODO: here we may use each ecosystem's login action instead,
+      # or use cosign login
+      - uses: sigstore/cosign-installer@d6a3abf1bdea83574e28d40543793018b6035605
+      - name: Login
+        run: |
+          set -euo pipefail
+          
+          cosign login "${{ env.DOCKER_REGISTRY }}" -u "$UNTRUSTED_USERNAME" -p "$UNTRUSTED_PASSWORD"
+          
+      #- uses: sigstore/cosign-installer@d6a3abf1bdea83574e28d40543793018b6035605
+      - name: Upload
+        env:
+          UNTRUSTED_PREDICATE: "${{ steps.gen-predicate.outputs.filename }}"
+          UNTRUSTED_IMAGE: "${{ steps.gen-predicate.outputs.image }}"
+        run: |
+          set -euo pipefail
+            
+          echo cosign attest --predicate "$UNTRUSTED_PREDICATE" \
+            --type "slsaprovenance" \
+            --force \
+            "$UNTRUSTED_IMAGE"
+            
+          COSIGN_EXPERIMENTAL=1 cosign attest --predicate "$UNTRUSTED_PREDICATE" \
+            --type "slsaprovenance" \
+             --force \
+            "$UNTRUSTED_IMAGE"
+
+          
+         

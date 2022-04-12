@@ -115,7 +115,7 @@ func GeneratePredicate(name, digest, ghContext, command, envs string) ([]byte, e
 		return nil, err
 	}
 
-	builderID, err := "builder-ID", nil // getReusableWorkflowID()
+	builderID, err := getReusableWorkflowID()
 	if err != nil {
 		return nil, err
 	}

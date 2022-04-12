@@ -135,7 +135,6 @@ jobs:
     needs: [builder]
     env:
       BUILDER_HASH: "${{ needs.builder.outputs.builder-sha256 }}"
-      BUILDER_BINARY: "${{ env.BUILDER_BINARY }}"
       UNTRUSTED_ARGS: "${{ inputs.args }}"
     outputs:
       command: ${{ steps.build-dry.outputs.command }}
@@ -152,6 +151,8 @@ jobs:
           name: "${{ env.BUILDER_BINARY }}"
       
       - name: Verify builder
+        env:
+          BUILDER_BINARY: "${{ env.BUILDER_BINARY }}"
         run: |
           set -euo pipefail
 
@@ -168,6 +169,8 @@ jobs:
   
       - name: Dry build
         id: build-dry
+        env:
+          BUILDER_BINARY: "${{ env.BUILDER_BINARY }}"
         run: |
           set -euo pipefail
           
@@ -193,7 +196,6 @@ jobs:
       UNTRUSTED_USERNAME: ${{ inputs.username }}
       UNTRUSTED_ARGS: ${{ inputs.args }}
       BUILDER_HASH: "${{ needs.builder.outputs.builder-sha256 }}"
-      BUILDER_BINARY: "${{ env.BUILDER_BINARY }}"
     outputs:
       image: ${{ steps.build-push.outputs.image }}
     steps:
@@ -222,6 +224,8 @@ jobs:
           name: "${{ env.BUILDER_BINARY }}"
 
       - name: Verify builder
+        env:
+          BUILDER_BINARY: "${{ env.BUILDER_BINARY }}"
         run: |
           set -euo pipefail
 
@@ -238,6 +242,8 @@ jobs:
           
       - name: Build and push
         id: build-push
+        env:
+          BUILDER_BINARY: "${{ env.BUILDER_BINARY }}"
         run: |
           set -euo pipefail
           
@@ -279,6 +285,8 @@ jobs:
         
       - name: Generate predicate
         id: gen-predicate
+        env:
+          BUILDER_BINARY: "${{ env.BUILDER_BINARY }}"
         run: |
           set -euo pipefail
           

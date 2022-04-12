@@ -135,9 +135,11 @@ jobs:
     needs: [builder]
     env:
       UNTRUSTED_ARGS: "${{ inputs.args }}"
+      UNTRUSTED_ENVS: "${{ inputs.envs }}"
       BUILDER_HASH: "${{ needs.builder.outputs.builder-sha256 }}"
     outputs:
       command: ${{ steps.build-dry.outputs.command }}
+      envs: ${{ steps.build-dry.outputs.envs }}
     
     steps:
       - name: Checkout the repository
@@ -176,9 +178,9 @@ jobs:
           
           # TODO: verify hash
           echo "running the builder $BUILDER_BINARY with hash $BUILDER_HASH"
-          echo ./"$BUILDER_BINARY" $UNTRUSTED_ARGS --dry-run
-          ./"$BUILDER_BINARY" $UNTRUSTED_ARGS --dry-run
-          echo "::set-output name=command::this is a command!"
+          echo ./"$BUILDER_BINARY" --dry-run --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
+          # Note: this will print command and envs.
+          ./"$BUILDER_BINARY" --dry-run --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
   
   ###################################################################
   #                                                                 #
@@ -276,13 +278,11 @@ jobs:
     env:
       UNTRUSTED_IMAGE: "${{ needs.build-release.outputs.image }}"
       UNTRUSTED_COMMAND: "${{ needs.build-dry.outputs.command }}"
+      UNTRUSTED_ENVS: "${{ needs.build-dry.outputs.envs }}"
       UNTRUSTED_PASSWORD: "${{ secrets.password }}"
       UNTRUSTED_USERNAME: "${{ inputs.username }}"
       
     steps:
-      - name: Checkout the repository
-        uses: actions/checkout@a12a3943b4bdde767164f792f33f40b04645d846 # v2.3.4
-        
       - name: Generate predicate
         id: gen-predicate
         env:
@@ -292,23 +292,17 @@ jobs:
           
           echo "image is: $UNTRUSTED_IMAGE"
           
-          echo "TODO: generate provenance dynamically"
-          echo "command: $UNTRUSTED_COMMAND"
-          
           #TODO: generate PROJECT dynamically using the URL
           # testing. Use a local file containing provenance.
           IMAGE_SHA256=$(echo $UNTRUSTED_IMAGE | cut -d "@" -f2 | cut -d ":" -f2)
-          IMAGE_PROVENANCE="predicate-sha256-$IMAGE_SHA256.json"
+          IMAGE_NAME=$(echo $UNTRUSTED_IMAGE | cut -d "@" -f1)
+                    
           
-          echo "provenance is: $IMAGE_PROVENANCE"
-          
-          export DATA="ewogICJidWlsZGVyIjogewogICAgImlkIjogImh0dHBzOi8vZ2l0aHViLmNvbS9zbHNhLWZyYW1ld29yay9zbHNhLWdpdGh1Yi1nZW5lcmF0b3ItZ28vLmdpdGh1Yi93b3JrZmxvd3MvYnVpbGRlci55bWxAcmVmcy9oZWFkcy9tYWluIgogIH0sCiAgImJ1aWxkVHlwZSI6ICJodHRwczovL2dpdGh1Yi5jb20vc2xzYS1mcmFtZXdvcmsvc2xzYS1naXRodWItZ2VuZXJhdG9yLWdvQHYxIiwKICAiaW52b2NhdGlvbiI6IHsKICAgICJjb25maWdTb3VyY2UiOiB7CiAgICAgICJ1cmkiOiAiZ2l0K2h0dHBzOi8vZ2l0aHViLmNvbWxhdXJlbnRzaW1vbi9zbHNhLW9uLWdpdGh1Yi10ZXN0QHJlZnMvaGVhZHMvbWFpbi5naXQiLAogICAgICAiZGlnZXN0IjogewogICAgICAgICJzaGExIjogImQzZmQ5NDgyZTY4ZDI3NmU2OWMwYThiM2Y3ZWFhYmIzYjllNTY2OTUiCiAgICAgIH0sCiAgICAgICJlbnRyeVBvaW50IjogIlNMU0EgUmVsZWFzZSIKICAgIH0sCiAgICAicGFyYW1ldGVycyI6IHsKICAgICAgInZlcnNpb24iOiAxLAogICAgICAicmVmX3R5cGUiOiAiYnJhbmNoIiwKICAgICAgInJlZiI6ICJyZWZzL2hlYWRzL21haW4iLAogICAgICAiYmFzZV9yZWYiOiAiIiwKICAgICAgImhlYWRfcmVmIjogIiIsCiAgICAgICJhY3RvciI6ICJsYXVyZW50c2ltb24iLAogICAgICAic2hhMSI6ICJkM2ZkOTQ4MmU2OGQyNzZlNjljMGE4YjNmN2VhYWJiM2I5ZTU2Njk1IgogICAgfSwKICAgICJlbnZpcm9ubWVudCI6IHsKICAgICAgImFyY2giOiAiYW1kNjQiLAogICAgICAiZ2l0aHViX2V2ZW50X25hbWUiOiAid29ya2Zsb3dfZGlzcGF0Y2giLAogICAgICAiZ2l0aHViX3J1bl9hdHRlbXB0IjogIjEiLAogICAgICAiZ2l0aHViX3J1bl9pZCI6ICIyMDkwODQxMjYzIiwKICAgICAgImdpdGh1Yl9ydW5fbnVtYmVyIjogIjE4IiwKICAgICAgIm9zIjogInVidW50dSIKICAgIH0KICB9LAogICJidWlsZENvbmZpZyI6IHsKICAgICJ2ZXJzaW9uIjogMSwKICAgICJzdGVwcyI6IFsKICAgICAgewogICAgICAgICJjb21tYW5kIjogWwogICAgICAgICAgIi9vcHQvaG9zdGVkdG9vbGNhY2hlL2dvLzEuMTcuOC94NjQvYmluL2dvIiwKICAgICAgICAgICJidWlsZCIsCiAgICAgICAgICAiLW1vZD12ZW5kb3IiLAogICAgICAgICAgIi10cmltcGF0aCIsCiAgICAgICAgICAiLXRhZ3M9bmV0Z28iLAogICAgICAgICAgIi1vIiwKICAgICAgICAgICJiaW5hcnktbGludXgtYW1kNjQiCiAgICAgICAgXSwKICAgICAgICAiZW52IjogWwogICAgICAgICAgIkdPT1M9bGludXgiLAogICAgICAgICAgIkdPQVJDSD1hbWQ2NCIsCiAgICAgICAgICAiR08xMTFNT0RVTEU9b24iLAogICAgICAgICAgIkNHT19FTkFCTEVEPTAiCiAgICAgICAgXQogICAgICB9CiAgICBdCiAgfSwKICAibWF0ZXJpYWxzIjogWwogICAgewogICAgICAidXJpIjogImdpdCtsYXVyZW50c2ltb24vc2xzYS1vbi1naXRodWItdGVzdC5naXQiLAogICAgICAiZGlnZXN0IjogewogICAgICAgICJzaGExIjogImQzZmQ5NDgyZTY4ZDI3NmU2OWMwYThiM2Y3ZWFhYmIzYjllNTY2OTUiCiAgICAgIH0KICAgIH0KICBdCn0="
-          #echo "TODO: upload artifact"
-          UNTRUSTED_PROVENANCE_DATA=$(echo -n "$DATA" | base64 -d)
-          echo -n "$UNTRUSTED_PROVENANCE_DATA" > "$IMAGE_PROVENANCE"
-          
-          echo "::set-output name=filename::$IMAGE_PROVENANCE"
           echo "::set-output name=image::$UNTRUSTED_IMAGE"
+
+          ./"$BUILDER_BINARY" predicate --artifact-name "$IMAGE_NAME" \
+            --digest "$IMAGE_SHA256" --command "$UNTRUSTED_COMMAND" \
+            --env "$UNTRUSTED_ENVS"
           
       # Note: here we need packages permissions
       # TODO: here we may use each ecosystem's login action instead,

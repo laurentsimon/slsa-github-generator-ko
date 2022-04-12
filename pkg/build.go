@@ -15,6 +15,8 @@
 package pkg
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -29,41 +31,101 @@ var (
 	errorEmptyFilename             = errors.New("filename is not set")
 )
 
-// See `go build help`.
-// `-asmflags`, `-n`, `-mod`, `-installsuffix`, `-modfile`,
-// `-workfile`, `-overlay`, `-pkgdir`, `-toolexec`, `-o`,
-// `-modcacherw`, `-work` not supported for now.
-
-var allowedBuildArgs = map[string]bool{
-	"-a": true, "-race": true, "-msan": true, "-asan": true,
-	"-v": true, "-x": true, "-buildinfo": true,
-	"-buildmode": true, "-buildvcs": true, "-compiler": true,
-	"-gccgoflags": true, "-gcflags": true,
-	"-ldflags": true, "-linkshared": true,
-	"-tags": true, "-trimpath": true,
-}
-
-var allowedEnvVariablePrefix = map[string]bool{
-	"GO": true, "CGO_": true, "KO_": true,
-	"KIND_": true,
-}
-
 type KoBuild struct {
-	ko     string
-	argEnv map[string]string
+	ko   string
+	args []string
+	envs map[string]string
 }
 
 func KoBuildNew(ko string) *KoBuild {
 	c := KoBuild{
-		ko:     ko,
-		argEnv: make(map[string]string),
+		ko:   ko,
+		envs: make(map[string]string),
+		args: make([]string, 0),
 	}
 
 	return &c
 }
 
 func (b *KoBuild) Run(dry bool) error {
+	fmt.Println("Run")
+
+	command, err := b.generateCommandArgs()
+	if err != nil {
+		return err
+	}
+
+	// A dry run prints the information that is "trusted", before
+	// the compiler is invoked.
+	if dry {
+		// Share the arguments.
+		command, err := marshallList(command)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("::set-output name=command::%s\n", command)
+
+		// Share the env variables.
+		env, err := b.generateCommandEnvVariables()
+		if err != nil {
+			return err
+		}
+		envs, err := marshallList(env)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("::set-output name=envs::%s\n", envs)
+		return nil
+	}
 	return nil
+}
+
+func (b *KoBuild) SetArgs(args string) error {
+	if args == "" {
+		return nil
+	}
+
+	for _, arg := range strings.Split(args, " ") {
+		arg = strings.Trim(arg, " ")
+
+		fmt.Printf("arg: %s\n", arg)
+		b.args = append(b.args, arg)
+
+	}
+	return nil
+}
+
+func (b *KoBuild) generateCommandEnvVariables() ([]string, error) {
+	var env []string
+
+	// Set env variables from config file.
+	for k, v := range b.envs {
+		env = append(env, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	return env, nil
+}
+
+func marshallList(args []string) (string, error) {
+	jsonData, err := json.Marshal(args)
+	if err != nil {
+		return "", fmt.Errorf("json.Marshal: %w", err)
+	}
+
+	encoded := base64.StdEncoding.EncodeToString(jsonData)
+	if err != nil {
+		return "", fmt.Errorf("base64.StdEncoding.DecodeString: %w", err)
+	}
+	return encoded, nil
+}
+
+func (b *KoBuild) generateCommandArgs() ([]string, error) {
+	flags := []string{b.ko, "publish"}
+
+	for _, v := range b.args {
+		flags = append(flags, v)
+	}
+	return flags, nil
 }
 
 func (b *KoBuild) SetArgEnvVariables(envs string) error {
@@ -74,7 +136,7 @@ func (b *KoBuild) SetArgEnvVariables(envs string) error {
 	for _, e := range strings.Split(envs, ",") {
 		s := strings.Trim(e, " ")
 
-		sp := strings.Split(s, ":")
+		sp := strings.Split(s, "=")
 		if len(sp) != 2 {
 			return fmt.Errorf("%w: %s", errorInvalidEnvArgument, s)
 		}
@@ -82,7 +144,7 @@ func (b *KoBuild) SetArgEnvVariables(envs string) error {
 		value := strings.Trim(sp[1], " ")
 
 		fmt.Printf("arg env: %s:%s\n", name, value)
-		b.argEnv[name] = value
+		b.envs[name] = value
 
 	}
 	return nil

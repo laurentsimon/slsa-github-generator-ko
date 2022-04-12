@@ -15,10 +15,11 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
-	"os/exec"
 
 	"github.com/laurentsimon/slsa-github-generator-ko/builder/pkg"
 )
@@ -26,7 +27,7 @@ import (
 func usage(p string) {
 	panic(fmt.Sprintf(`Usage: 
 	 %s build [--dry] --env $ENV
-	 %s predicate --binary-name $NAME --digest $DIGEST --command $COMMAND --env $ENV`, p, p))
+	 %s predicate --artifact-name $NAME --digest $DIGEST --command $COMMAND --env $ENV`, p, p))
 }
 
 func check(e error) {
@@ -38,15 +39,16 @@ func check(e error) {
 func main() {
 	// Build command.
 	buildCmd := flag.NewFlagSet("build", flag.ExitOnError)
-	buildDry := buildCmd.Bool("dry", false, "dry run of the build without invoking compiler")
-	buildEnv := buildCmd.String("env", "", "env variables used to compile the binary")
+	buildDry := buildCmd.Bool("dry", false, "dry run of the build without invoking ko")
+	buildEnv := buildCmd.String("env", "", "env variables for ko")
+	buildArgs := buildCmd.String("args", "", "arguments for ko")
 
 	// Predicate command.
 	predicateCmd := flag.NewFlagSet("predicate", flag.ExitOnError)
-	predicateName := predicateCmd.String("binary-name", "", "untrusted binary name of the artifact built")
-	predicateDigest := predicateCmd.String("digest", "", "sha256 digest of the untrusted binary")
-	predicateCommand := predicateCmd.String("command", "", "command used to compile the binary")
-	// predicateEnv := predicateCmd.String("env", "", "env variables used to compile the binary")
+	predicateName := predicateCmd.String("artifact-name", "", "untrusted artifact name")
+	predicateDigest := predicateCmd.String("digest", "", "sha256 digest of the artifact")
+	predicateCommand := predicateCmd.String("command", "", "command used to generate the artifact")
+	predicateEnv := predicateCmd.String("env", "", "env variables used to generate the artifact")
 
 	// Expect a sub-command.
 	if len(os.Args) < 2 {
@@ -56,14 +58,17 @@ func main() {
 	switch os.Args[1] {
 	case buildCmd.Name():
 		buildCmd.Parse(os.Args[2:])
-		if len(buildCmd.Args()) < 1 {
-			usage(os.Args[0])
-		}
 
-		ko, err := exec.LookPath("ko")
-		check(err)
+		// TODO: update
+		// ko, err := exec.LookPath("ko")
+		// check(err)
+		ko := "~/go/bin/ko"
 
 		kobuild := pkg.KoBuildNew(ko)
+
+		// Set arguments.
+		err := kobuild.SetArgs(*buildArgs)
+		check(err)
 
 		// Set env variables encoded as arguments.
 		err = kobuild.SetArgEnvVariables(*buildEnv)
@@ -79,7 +84,7 @@ func main() {
 			usage(os.Args[0])
 		}
 
-		/*githubContext, ok := os.LookupEnv("GITHUB_CONTEXT")
+		githubContext, ok := os.LookupEnv("GITHUB_CONTEXT")
 		if !ok {
 			panic(errors.New("environment variable GITHUB_CONTEXT not present"))
 		}
@@ -92,8 +97,8 @@ func main() {
 		err = ioutil.WriteFile(filename, attBytes, 0600)
 		check(err)
 
-		fmt.Printf("::set-output name=signed-predicate-name::%s\n", filename)
-		*/
+		fmt.Printf("::set-output name=predicate::%s\n", filename)
+
 	default:
 		fmt.Println("expected 'build' or 'predicate' subcommands")
 		os.Exit(1)

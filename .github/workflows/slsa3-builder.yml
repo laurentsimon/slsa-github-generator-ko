@@ -134,8 +134,8 @@ jobs:
       contents: read
     needs: [builder]
     env:
-      BUILDER_HASH: "${{ needs.builder.outputs.builder-sha256 }}"
       UNTRUSTED_ARGS: "${{ inputs.args }}"
+      BUILDER_HASH: "${{ needs.builder.outputs.builder-sha256 }}"
     outputs:
       command: ${{ steps.build-dry.outputs.command }}
     
@@ -175,7 +175,7 @@ jobs:
           set -euo pipefail
           
           # TODO: verify hash
-          echo "running the builder $BUILDER_BINARY with hash "$BUILDER_SHA256""
+          echo "running the builder $BUILDER_BINARY with hash "$BUILDER_HASH"
           echo ./"$BUILDER_BINARY" $UNTRUSTED_ARGS --dry-run
           ./"$BUILDER_BINARY" $UNTRUSTED_ARGS --dry-run
           echo "::set-output name=command::this is a command!"

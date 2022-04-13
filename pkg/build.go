@@ -31,7 +31,10 @@ var (
 	errorEnvVariableNameNotAllowed = errors.New("env variable not allowed")
 	errorInvalidFilename           = errors.New("invalid filename")
 	errorEmptyFilename             = errors.New("filename is not set")
+	errorInvalidRegistry           = errors.New("invalid registry")
 )
+
+var dockerRegistry = "docker.io"
 
 type KoBuild struct {
 	ko   string
@@ -127,6 +130,27 @@ func (b *KoBuild) generateCommandEnvVariables() ([]string, error) {
 	}
 
 	return env, nil
+}
+
+func (b *KoBuild) generateRegistry() (string, error) {
+	var registry string
+	for k, v := range b.envs {
+		if k == "KO_DOCKER_REPO" {
+			registry = v
+		}
+	}
+
+	// Empty registry is allowed, default to docker.
+	if registry == "" {
+		return dockerRegistry, nil
+	}
+
+	parts := strings.Split(registry, "/")
+	if len(parts) > 2 {
+		return "", fmt.Errorf("%w: %s", errorInvalidRegistry, registry)
+	}
+
+	return strings.Trim(parts[0], " "), nil
 }
 
 func marshallList(args []string) (string, error) {

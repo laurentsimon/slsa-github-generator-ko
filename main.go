@@ -27,8 +27,9 @@ import (
 
 func usage(p string) {
 	panic(fmt.Sprintf(`Usage: 
-	 %s build [--dry] --env $ENV
-	 %s predicate --artifact-name $NAME --digest $DIGEST --command $COMMAND --env $ENV`, p, p))
+	%s build [--dry] --env $ENV
+	%s registry --env $ENV
+	%s predicate --artifact-name $NAME --digest $DIGEST --command $COMMAND --env $ENV`, p, p))
 }
 
 func check(e error) {
@@ -51,16 +52,40 @@ func main() {
 	predicateCommand := predicateCmd.String("command", "", "command used to generate the artifact")
 	predicateEnv := predicateCmd.String("env", "", "env variables used to generate the artifact")
 
+	// Registry command.
+	registryCmd := flag.NewFlagSet("registry", flag.ExitOnError)
+	registryEnv := buildCmd.String("envs", "", "env variables for ko")
+
 	// Expect a sub-command.
 	if len(os.Args) < 2 {
 		usage(os.Args[0])
 	}
 
 	switch os.Args[1] {
+	case registryCmd.Name():
+		buildCmd.Parse(os.Args[2:])
+		if *registryEnv == "" {
+			usage(os.Args[0])
+		}
+
+		ko := "/usr/local/bin/ko"
+
+		kobuild := pkg.KoBuildNew(ko)
+
+		// Set env variables encoded as arguments.
+		err := kobuild.SetArgEnvVariables(*buildEnv)
+		check(err)
+
+		// Parse the envs variable and print the registry.
+		registry, err := kobuild.generateRegistry()
+		check(err)
+
+		fmt.Println(registry)
+
 	case buildCmd.Name():
 		buildCmd.Parse(os.Args[2:])
 
-		// TODO: fix this.
+		// TODO: fix this by setting the path.
 		// ko, err := exec.LookPath("ko")
 		// check(err)
 		ko := "/usr/local/bin/ko"

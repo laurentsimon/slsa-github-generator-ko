@@ -265,6 +265,8 @@ jobs:
 
           go install github.com/google/ko@${{ env.KO_COMMIT }}
 
+          echo "PATH=$PATH:~/go/bin/" >> $GITHUB_ENV
+
       # Note: downlaoading and pinning the download seems better
       # than adding this dependency. Need to look how the install works
       # remko/dsadmin/blob/7a6939179bc56b1be28cada040f2b4a148e3e14a/.github/workflows/publish-release.yml

@@ -185,22 +185,25 @@ jobs:
           echo ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
           ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
           
-          # if [ -z $UNTRUSTED_ARGS ]; then
-          #   if [ -z $UNTRUSTED_ENVS ]; then
-          #     echo ./"$BUILDER_BINARY" build --dry
-          #     ./"$BUILDER_BINARY" build --dry
-          #   else
-          #     echo ./"$BUILDER_BINARY" build --dry --envs "$UNTRUSTED_ENVS"
-          #     ./"$BUILDER_BINARY" build --dry --envs "$UNTRUSTED_ENVS"
-          #   fi
+          # if [[ -z "$UNTRUSTED_ARGS" ]]
+          # then
+          #     if [[ -z "$UNTRUSTED_ENVS" ]]
+          #     then
+          #       echo ./"$BUILDER_BINARY" build --dry
+          #       ./"$BUILDER_BINARY" build --dry
+          #     else
+          #         echo ./"$BUILDER_BINARY" build --dry --envs "$UNTRUSTED_ENVS"
+          #        ./"$BUILDER_BINARY" build --dry --envs "$UNTRUSTED_ENVS"
+          #     fi
           # else
-          #   if [ -z $UNTRUSTED_ENVS ]; then
-          #     echo ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS"
-          #     ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS"
-          #   else
-          #     echo ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
-          #     ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
-          #   fi
+          #     if [[ -z "$UNTRUSTED_ENVS" ]]
+          #     then
+          #       echo ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS"
+          #        ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS"
+          #     else
+          #         echo ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
+          #        ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
+          #     fi
           # fi
   
   ###################################################################
@@ -354,15 +357,13 @@ jobs:
           #TODO: generate PROJECT dynamically using the URL
           # testing. Use a local file containing provenance.
           IMAGE_SHA256=$(echo $UNTRUSTED_IMAGE | cut -d "@" -f2 | cut -d ":" -f2)
-          PREDICATE_FILE=predicate-sha256-"$IMAGE_SHA256"
           IMAGE_NAME=$(echo $UNTRUSTED_IMAGE | cut -d "@" -f1)
                     
           echo "image is: $UNTRUSTED_IMAGE"
-          echo "predicate is: $PREDICATE_FILE"
 
           echo "::set-output name=image::$UNTRUSTED_IMAGE"
-          echo "::set-output name=filename::$PREDICATE_FILE"
 
+          # Note: this will print the predice
           echo ./"$BUILDER_BINARY" predicate --artifact-name "$IMAGE_NAME" \
             --digest "$IMAGE_SHA256" --command "$UNTRUSTED_COMMAND" \
             --env "$UNTRUSTED_ENVS"
@@ -384,7 +385,7 @@ jobs:
       #- uses: sigstore/cosign-installer@d6a3abf1bdea83574e28d40543793018b6035605
       - name: Upload
         env:
-          UNTRUSTED_PREDICATE: "${{ steps.gen-predicate.outputs.filename }}"
+          UNTRUSTED_PREDICATE: "${{ steps.gen-predicate.outputs.predicate }}"
           UNTRUSTED_IMAGE: "${{ steps.gen-predicate.outputs.image }}"
         run: |
           set -euo pipefail

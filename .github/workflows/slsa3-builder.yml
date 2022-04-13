@@ -6,9 +6,6 @@ permissions:
 env:
   # Builder
   BUILDER_BINARY: builder
-  # Registries.
-  DOCKER_REGISTRY: docker.io
-  GITHUB_REGISTRY: ghcr.io
 
 ###################################################################
 #                                                                 #
@@ -243,10 +240,16 @@ jobs:
         run: |
           set -euo pipefail
           
-          # TODO: parse env variables and extract KO_DOCKER_REPO. This variable is always
-          # set. If there's a '/', the registry will be the first part; otherwise it
-          # will be set to docker.io
-          ko login "${{ env.DOCKER_REGISTRY }}" -u "$UNTRUSTED_USERNAME" -p "$UNTRUSTED_PASSWORD"
+          REGISTRY=""
+          if [[ "$KO_DOCKER_REPO" == *"/"* ]]; then
+            REGISTRY=$(echo -n "$KO_DOCKER_REPO" | cut -d "/" -f1)
+          else
+            REGISTRY="$KO_DOCKER_REPO"
+          fi
+          
+          echo "login to $REGISTRY"
+
+          ko login "$REGISTRY" -u "$UNTRUSTED_USERNAME" -p "$UNTRUSTED_PASSWORD"
   
       - name: Download builder
         uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v2.1.0
@@ -381,7 +384,16 @@ jobs:
         run: |
           set -euo pipefail
           
-          cosign login "${{ env.DOCKER_REGISTRY }}" -u "$UNTRUSTED_USERNAME" -p "$UNTRUSTED_PASSWORD"
+          REGISTRY=""
+          if [[ "$KO_DOCKER_REPO" == *"/"* ]]; then
+            REGISTRY=$(echo -n "$KO_DOCKER_REPO" | cut -d "/" -f1)
+          else
+            REGISTRY="$KO_DOCKER_REPO"
+          fi
+          
+          echo "login to $REGISTRY"
+
+          cosign login "$REGISTRY" -u "$UNTRUSTED_USERNAME" -p "$UNTRUSTED_PASSWORD"
           
       - name: Upload
         env:

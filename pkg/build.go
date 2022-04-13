@@ -87,7 +87,6 @@ func (b *KoBuild) Run(dry bool) error {
 
 	fmt.Println("command", command)
 	fmt.Println("env", envs)
-	// fmt.Println("docker.io/laurentsimon/helloworld@sha256:sha256:d1640349c32727962ae483d362c4e87c2adea67440dee3dc35cbbc60745558ba")
 	return syscall.Exec(b.ko, command, envs)
 }
 

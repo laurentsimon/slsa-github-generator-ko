@@ -169,6 +169,17 @@ jobs:
           # Make the builder executable.
           chmod a+x "$BUILDER_BINARY"
   
+      - name: Set up golang environment
+        uses: actions/setup-go@f6164bd8c8acb4a71fb2791a8b6c4024ff038dab # v2.1.3
+      
+      - name: Install ko
+        run: |
+          set -euo pipefail
+
+          go install github.com/google/ko@${{ env.KO_COMMIT }}
+
+          #echo "PATH=$PATH:~/go/bin/" >> $GITHUB_ENV
+
       - name: Dry build
         id: build-dry
         env:
@@ -265,7 +276,7 @@ jobs:
 
           go install github.com/google/ko@${{ env.KO_COMMIT }}
 
-          echo "PATH=$PATH:~/go/bin/" >> $GITHUB_ENV
+          #echo "PATH=$PATH:~/go/bin/" >> $GITHUB_ENV
 
       # Note: downlaoading and pinning the download seems better
       # than adding this dependency. Need to look how the install works

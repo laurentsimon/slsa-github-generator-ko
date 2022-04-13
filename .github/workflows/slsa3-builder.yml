@@ -137,6 +137,7 @@ jobs:
     outputs:
       command: ${{ steps.build-dry.outputs.command }}
       envs: ${{ steps.build-dry.outputs.envs }}
+      registry: ${{ steps.build-dry.outputs.registry }}
     
     steps:
       - name: Checkout the repository
@@ -210,7 +211,7 @@ jobs:
   ###################################################################
   build-release:
     runs-on: ubuntu-latest
-    needs: [builder]
+    needs: [builder,build-dry]
     permissions:
       contents: read
       packages: write
@@ -219,6 +220,7 @@ jobs:
       UNTRUSTED_USERNAME: ${{ inputs.username }}
       UNTRUSTED_ARGS: "${{ inputs.args }}"
       UNTRUSTED_ENVS: "${{ inputs.envs }}"
+      UNTRUSTED_REGISTRY: "${{ needs.build-dry.outputs.registry }}"
       BUILDER_HASH: "${{ needs.builder.outputs.builder-sha256 }}"
     outputs:
       image: ${{ steps.build-push.outputs.image }}
@@ -261,9 +263,7 @@ jobs:
       - name: Login
         run: |
           set -euo pipefail
-          
-          REGISTRY=$(./"$BUILDER_BINARY" build --envs "$UNTRUSTED_ENVS"  | tail -1)
-          
+                    
           echo "login to $REGISTRY"
 
           ko login "$REGISTRY" -u "$UNTRUSTED_USERNAME" -p "$UNTRUSTED_PASSWORD"
@@ -319,6 +319,7 @@ jobs:
       UNTRUSTED_IMAGE: "${{ needs.build-release.outputs.image }}"
       UNTRUSTED_COMMAND: "${{ needs.build-dry.outputs.command }}"
       UNTRUSTED_ENVS: "${{ needs.build-dry.outputs.envs }}"
+      UNTRUSTED_REGISTRY: "${{ needs.build-dry.outputs.registry }}"
       UNTRUSTED_PASSWORD: "${{ secrets.password }}"
       UNTRUSTED_USERNAME: "${{ inputs.username }}"
       BUILDER_HASH: "${{ needs.builder.outputs.builder-sha256 }}"
@@ -378,9 +379,7 @@ jobs:
       - name: Login
         run: |
           set -euo pipefail
-          
-          REGISTRY=$(./"$BUILDER_BINARY" build --envs "$UNTRUSTED_ENVS"  | tail -1)
-          
+                    
           echo "login to $REGISTRY"
 
           cosign login "$REGISTRY" -u "$UNTRUSTED_USERNAME" -p "$UNTRUSTED_PASSWORD"

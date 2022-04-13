@@ -80,7 +80,7 @@ func main() {
 		registry, err := kobuild.GenerateRegistry()
 		check(err)
 
-		fmt.Println(registry)
+		fmt.Printf("::set-output name=registry::%s\n", registry)
 
 	case buildCmd.Name():
 		buildCmd.Parse(os.Args[2:])

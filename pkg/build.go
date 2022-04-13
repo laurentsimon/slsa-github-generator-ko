@@ -132,7 +132,7 @@ func (b *KoBuild) generateCommandEnvVariables() ([]string, error) {
 	return env, nil
 }
 
-func (b *KoBuild) generateRegistry() (string, error) {
+func (b *KoBuild) GenerateRegistry() (string, error) {
 	var registry string
 	for k, v := range b.envs {
 		if k == "KO_DOCKER_REPO" {

@@ -77,7 +77,7 @@ func main() {
 		check(err)
 
 		// Parse the envs variable and print the registry.
-		registry, err := kobuild.generateRegistry()
+		registry, err := kobuild.GenerateRegistry()
 		check(err)
 
 		fmt.Println(registry)

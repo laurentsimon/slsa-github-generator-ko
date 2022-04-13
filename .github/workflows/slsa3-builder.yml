@@ -180,7 +180,13 @@ jobs:
           echo "running the builder $BUILDER_BINARY with hash $BUILDER_HASH"
           echo ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
           # Note: this will print command and envs.
-          ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
+
+          if [ -z $UNTRUSTED_ENVS ]; then
+            ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" 
+          else
+            ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
+          fi
+          
   
   ###################################################################
   #                                                                 #

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 
 	"github.com/laurentsimon/slsa-github-generator-ko/builder/pkg"
 )
@@ -60,14 +61,14 @@ func main() {
 		buildCmd.Parse(os.Args[2:])
 
 		// TODO: update
-		// ko, err := exec.LookPath("ko")
-		// check(err)
-		ko := "~/go/bin/ko"
+		ko, err := exec.LookPath("ko")
+		check(err)
+		// ko := "~/go/bin/ko"
 
 		kobuild := pkg.KoBuildNew(ko)
 
 		// Set arguments.
-		err := kobuild.SetArgs(*buildArgs)
+		err = kobuild.SetArgs(*buildArgs)
 		check(err)
 
 		// Set env variables encoded as arguments.

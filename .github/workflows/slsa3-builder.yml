@@ -7,7 +7,7 @@ env:
   # Builder
   BUILDER_BINARY: builder
   # Ko
-  KO_HASH: f090cb8c9204e928fba7ea0c82c3467e5e10f821b8eb9680a3ce3cd17533fffe
+  KO_HASH: afb5dacb44bfeafdc53c6de03d9ff74f4a6003c5617381d3139038aa25f3fb66
   KO_VERSION: 0.11.2
 
 ###################################################################
@@ -178,7 +178,7 @@ jobs:
           COMPUTED_HASH=$(sha256sum ko.tar.gz | awk '{print $1}')
           echo "${{ env.KO_HASH }} ko.tar.gz" | sha256sum --strict --check --status || exit -2
           cat ko.tar.gz | sudo tar xzf - -C /usr/local/bin ko
-          
+
       - name: Dry build
         id: build-dry
         env:

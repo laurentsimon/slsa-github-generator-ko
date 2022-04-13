@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/laurentsimon/slsa-github-generator-ko/builder/pkg"
 )
@@ -93,7 +94,9 @@ func main() {
 			githubContext, *predicateCommand, *predicateEnv)
 		check(err)
 
-		filename := fmt.Sprintf("%s.intoto.jsonl", *predicateName)
+		name := strings.Replace(*predicateName, "/", "-", -1)
+		name = strings.Replace(name, ":", "--", -1)
+		filename := fmt.Sprintf("%s.intoto.jsonl", name)
 		err = ioutil.WriteFile(filename, attBytes, 0600)
 		check(err)
 

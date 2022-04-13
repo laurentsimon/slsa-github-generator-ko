@@ -274,20 +274,10 @@ jobs:
           BUILDER_BINARY: "${{ env.BUILDER_BINARY }}"
         run: |
           set -euo pipefail
-          
-          #TODO: run
-          echo ./"$BUILDER_BINARY" build --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
 
-          # Note: this will print command and envs.
-          # Note: this will be done in Go via an exec and to set up env variables.
-          # Note 2: we will use a dry-run to generate the command for provenance in a separate job.
-          # Note 3: we will use the value provided by the user and set env autoatically, so we
-          # won't need to set this explicitely.
-          # export KO_DOCKER_REPO="${{ env.DOCKER_REGISTRY }}/$UNTRUSTED_USERNAME"
+          pwd
+          ls -la
           
-          # #TODO: take these arguments from args and use exec in Go.
-          # IMAGE=$(ko publish $UNTRUSTED_ARGS)
-
           IMAGE=""
           if [[ -z "$UNTRUSTED_ARGS" ]]
           then

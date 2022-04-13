@@ -283,24 +283,32 @@ jobs:
           # Note 2: we will use a dry-run to generate the command for provenance in a separate job.
           # Note 3: we will use the value provided by the user and set env autoatically, so we
           # won't need to set this explicitely.
-          export KO_DOCKER_REPO="${{ env.DOCKER_REGISTRY }}/$UNTRUSTED_USERNAME"
+          # export KO_DOCKER_REPO="${{ env.DOCKER_REGISTRY }}/$UNTRUSTED_USERNAME"
           
-          #TODO: take these arguments from args and use exec in Go.
-          IMAGE=$(ko publish $UNTRUSTED_ARGS)
+          # #TODO: take these arguments from args and use exec in Go.
+          # IMAGE=$(ko publish $UNTRUSTED_ARGS)
 
-          # if [ -z $UNTRUSTED_ARGS ]; then
-          #   if [ -z $UNTRUSTED_ENVS ]; then
-          #     ./"$BUILDER_BINARY" build
-          #   else
-          #     ./"$BUILDER_BINARY" build --envs "$UNTRUSTED_ENVS"
-          #   fi
-          # else
-          #   if [ -z $UNTRUSTED_ENVS ]; then
-          #     ./"$BUILDER_BINARY" build --args "$UNTRUSTED_ARGS"
-          #   else
-          #     ./"$BUILDER_BINARY" build --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
-          #   fi
-          # fi
+          IMAGE=""
+          if [[ -z "$UNTRUSTED_ARGS" ]]
+          then
+              if [[ -z "$UNTRUSTED_ENVS" ]]
+              then
+                echo ./"$BUILDER_BINARY" build
+                IMAGE=$(./"$BUILDER_BINARY" build)
+              else
+                echo ./"$BUILDER_BINARY" build --envs "$UNTRUSTED_ENVS"
+                IMAGE=$(./"$BUILDER_BINARY" build --envs "$UNTRUSTED_ENVS")
+              fi
+          else
+              if [[ -z "$UNTRUSTED_ENVS" ]]
+              then
+                echo ./"$BUILDER_BINARY" build --args "$UNTRUSTED_ARGS"
+                IMAGE=$(./"$BUILDER_BINARY" build --args "$UNTRUSTED_ARGS")
+              else
+                echo ./"$BUILDER_BINARY" build --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
+                IMAGE=$(./"$BUILDER_BINARY" build --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS")
+              fi
+          fi
           
           echo "::set-output name=image::$IMAGE"
   

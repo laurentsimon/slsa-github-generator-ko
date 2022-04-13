@@ -182,8 +182,6 @@ jobs:
             --args "$UNTRUSTED_ARGS" \
             --envs "$UNTRUSTED_ENVS"
 
-          # Note: this will print command and envs.
-
           if [ -z $UNTRUSTED_ARGS ]; then
             if [ -z $UNTRUSTED_ENVS ]; then
               echo ./"$BUILDER_BINARY" build --dry
@@ -201,7 +199,6 @@ jobs:
               ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
             fi
           fi
-          
   
   ###################################################################
   #                                                                 #
@@ -350,16 +347,21 @@ jobs:
           BUILDER_BINARY: "${{ env.BUILDER_BINARY }}"
         run: |
           set -euo pipefail
-          
-          echo "image is: $UNTRUSTED_IMAGE"
-          
+                    
           #TODO: generate PROJECT dynamically using the URL
           # testing. Use a local file containing provenance.
           IMAGE_SHA256=$(echo $UNTRUSTED_IMAGE | cut -d "@" -f2 | cut -d ":" -f2)
           IMAGE_NAME=$(echo $UNTRUSTED_IMAGE | cut -d "@" -f1)
                     
-          
+          echo "image is: $UNTRUSTED_IMAGE"
+          echo "predicate is: $IMAGE_NAME"
+
           echo "::set-output name=image::$UNTRUSTED_IMAGE"
+          echo "::set-output name=filename::$IMAGE_NAME"
+
+          echo ./"$BUILDER_BINARY" predicate --artifact-name "$IMAGE_NAME" \
+            --digest "$IMAGE_SHA256" --command "$UNTRUSTED_COMMAND" \
+            --env "$UNTRUSTED_ENVS"
 
           ./"$BUILDER_BINARY" predicate --artifact-name "$IMAGE_NAME" \
             --digest "$IMAGE_SHA256" --command "$UNTRUSTED_COMMAND" \

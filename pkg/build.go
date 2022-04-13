@@ -19,7 +19,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
+	"syscall"
 )
 
 var (
@@ -55,10 +57,15 @@ func (b *KoBuild) Run(dry bool) error {
 		return err
 	}
 
+	envs, err := b.generateEnvVariables()
+	if err != nil {
+		return err
+	}
+
 	// A dry run prints the information that is "trusted", before
 	// the compiler is invoked.
 	if dry {
-		// Share the arguments.
+		// Share the command.
 		command, err := marshallList(command)
 		if err != nil {
 			return err
@@ -77,7 +84,10 @@ func (b *KoBuild) Run(dry bool) error {
 		fmt.Printf("::set-output name=envs::%s\n", envs)
 		return nil
 	}
-	return nil
+
+	fmt.Println("command", command)
+	fmt.Println("env", envs)
+	return syscall.Exec(b.ko, command, envs)
 }
 
 func (b *KoBuild) SetArgs(args string) error {
@@ -93,6 +103,19 @@ func (b *KoBuild) SetArgs(args string) error {
 
 	}
 	return nil
+}
+
+func (b *KoBuild) generateEnvVariables() ([]string, error) {
+	env := os.Environ()
+
+	cenv, err := b.generateCommandEnvVariables()
+	if err != nil {
+		return cenv, err
+	}
+
+	env = append(env, cenv...)
+
+	return env, nil
 }
 
 func (b *KoBuild) generateCommandEnvVariables() ([]string, error) {

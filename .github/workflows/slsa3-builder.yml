@@ -170,6 +170,15 @@ jobs:
           # Make the builder executable.
           chmod a+x "$BUILDER_BINARY"
   
+      - name: Setup Ko
+        run: |
+          set -euo pipefail
+          
+          curl -fsL "https://github.com/google/ko/releases/download/v${{ env.KO_VERSION }}/ko_${{ env.KO_VERSION }}_Linux_x86_64.tar.gz" > ko.tar.gz 
+          COMPUTED_HASH=$(sha256sum ko.tar.gz | awk '{print $1}')
+          echo "${{ env.KO_HASH }} ko.tar.gz" | sha256sum --strict --check --status || exit -2
+          cat ko.tar.gz | sudo tar xzf - -C /usr/local/bin ko
+          
       - name: Dry build
         id: build-dry
         env:

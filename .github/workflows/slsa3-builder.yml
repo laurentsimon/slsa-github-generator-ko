@@ -302,6 +302,7 @@ jobs:
               fi
           fi
           
+          echo "image generated is: $IMAGE"
           echo "::set-output name=image::$IMAGE"
   
   ###################################################################

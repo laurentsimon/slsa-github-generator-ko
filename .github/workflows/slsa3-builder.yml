@@ -181,10 +181,18 @@ jobs:
           echo ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
           # Note: this will print command and envs.
 
-          if [ -z $UNTRUSTED_ENVS ]; then
-            ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" 
+          if [ -z $UNTRUSTED_ARGS ]; then
+            if [ -z $UNTRUSTED_ENVS ]; then
+              ./"$BUILDER_BINARY" build --dry
+            else
+              ./"$BUILDER_BINARY" build --dry --envs "$UNTRUSTED_ENVS"
+            fi
           else
-            ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
+            if [ -z $UNTRUSTED_ENVS ]; then
+              ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS"
+            else
+              ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
+            fi
           fi
           
   
@@ -267,6 +275,20 @@ jobs:
           
           #TODO: take these arguments from args and use exec in Go.
           IMAGE=$(ko publish $UNTRUSTED_ARGS)
+
+          # if [ -z $UNTRUSTED_ARGS ]; then
+          #   if [ -z $UNTRUSTED_ENVS ]; then
+          #     ./"$BUILDER_BINARY" build
+          #   else
+          #     ./"$BUILDER_BINARY" build --envs "$UNTRUSTED_ENVS"
+          #   fi
+          # else
+          #   if [ -z $UNTRUSTED_ENVS ]; then
+          #     ./"$BUILDER_BINARY" build --args "$UNTRUSTED_ARGS"
+          #   else
+          #     ./"$BUILDER_BINARY" build --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
+          #   fi
+          # fi
           
           echo "::set-output name=image::$IMAGE"
   

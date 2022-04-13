@@ -60,7 +60,7 @@ func main() {
 	case buildCmd.Name():
 		buildCmd.Parse(os.Args[2:])
 
-		// TODO: update
+		// TODO: fix this.
 		// ko, err := exec.LookPath("ko")
 		// check(err)
 		ko := "~/go/bin/ko"

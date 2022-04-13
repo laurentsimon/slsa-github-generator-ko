@@ -68,7 +68,7 @@ func main() {
 		kobuild := pkg.KoBuildNew(ko)
 
 		// Set arguments.
-		err = kobuild.SetArgs(*buildArgs)
+		err := kobuild.SetArgs(*buildArgs)
 		check(err)
 
 		// Set env variables encoded as arguments.

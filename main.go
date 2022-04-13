@@ -29,7 +29,7 @@ func usage(p string) {
 	panic(fmt.Sprintf(`Usage: 
 	%s build [--dry] --env $ENV
 	%s registry --env $ENV
-	%s predicate --artifact-name $NAME --digest $DIGEST --command $COMMAND --env $ENV`, p, p))
+	%s predicate --artifact-name $NAME --digest $DIGEST --command $COMMAND --env $ENV`, p, p, p))
 }
 
 func check(e error) {
@@ -54,7 +54,7 @@ func main() {
 
 	// Registry command.
 	registryCmd := flag.NewFlagSet("registry", flag.ExitOnError)
-	registryEnv := buildCmd.String("envs", "", "env variables for ko")
+	registryEnv := registryCmd.String("envs", "", "env variables for ko")
 
 	// Expect a sub-command.
 	if len(os.Args) < 2 {

@@ -62,10 +62,8 @@ func main() {
 	case buildCmd.Name():
 		buildCmd.Parse(os.Args[2:])
 
-		// TODO: fix this by setting the path.
 		ko, err := exec.LookPath("ko")
 		check(err)
-		// ko := "/usr/local/bin/ko"
 
 		kobuild := pkg.KoBuildNew(ko)
 

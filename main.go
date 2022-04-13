@@ -52,36 +52,12 @@ func main() {
 	predicateCommand := predicateCmd.String("command", "", "command used to generate the artifact")
 	predicateEnv := predicateCmd.String("env", "", "env variables used to generate the artifact")
 
-	// Registry command.
-	registryCmd := flag.NewFlagSet("registry", flag.ExitOnError)
-	registryEnv := registryCmd.String("envs", "", "env variables for ko")
-
 	// Expect a sub-command.
 	if len(os.Args) < 2 {
 		usage(os.Args[0])
 	}
 
 	switch os.Args[1] {
-	case registryCmd.Name():
-		buildCmd.Parse(os.Args[2:])
-		if *registryEnv == "" {
-			usage(os.Args[0])
-		}
-
-		ko := "/usr/local/bin/ko"
-
-		kobuild := pkg.KoBuildNew(ko)
-
-		// Set env variables encoded as arguments.
-		err := kobuild.SetArgEnvVariables(*buildEnv)
-		check(err)
-
-		// Parse the envs variable and print the registry.
-		registry, err := kobuild.GenerateRegistry()
-		check(err)
-
-		fmt.Printf("::set-output name=registry::%s\n", registry)
-
 	case buildCmd.Name():
 		buildCmd.Parse(os.Args[2:])
 

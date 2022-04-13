@@ -263,7 +263,10 @@ jobs:
       - name: Login
         run: |
           set -euo pipefail
-                    
+          
+          # TODO: fix the installation?
+          unset KO_DOCKER_REPO
+          
           echo "login to $UNTRUSTED_REGISTRY"
 
           ko login "$UNTRUSTED_REGISTRY" -u "$UNTRUSTED_USERNAME" -p "$UNTRUSTED_PASSWORD"
@@ -277,6 +280,9 @@ jobs:
 
           pwd
           ls -la
+
+          # TODO: fix the installation?
+          unset KO_DOCKER_REPO
 
           IMAGE=""
           if [[ -z "$UNTRUSTED_ARGS" ]]

@@ -65,6 +65,11 @@ func (b *KoBuild) Run(dry bool) error {
 		return err
 	}
 
+	registry, err := b.generateRegistry()
+	if err != nil {
+		return err
+	}
+
 	// A dry run prints the information that is "trusted", before
 	// the compiler is invoked.
 	if dry {
@@ -85,11 +90,15 @@ func (b *KoBuild) Run(dry bool) error {
 			return err
 		}
 		fmt.Printf("::set-output name=envs::%s\n", envs)
+
+		fmt.Printf("::set-output name=registry::%s\n", registry)
+
 		return nil
 	}
 
 	fmt.Println("command", command)
 	fmt.Println("env", envs)
+	fmt.Println("registry", registry)
 	return syscall.Exec(b.ko, command, envs)
 }
 
@@ -132,7 +141,7 @@ func (b *KoBuild) generateCommandEnvVariables() ([]string, error) {
 	return env, nil
 }
 
-func (b *KoBuild) GenerateRegistry() (string, error) {
+func (b *KoBuild) generateRegistry() (string, error) {
 	var registry string
 	for k, v := range b.envs {
 		if k == "KO_DOCKER_REPO" {

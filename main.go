@@ -41,7 +41,7 @@ func main() {
 	// Build command.
 	buildCmd := flag.NewFlagSet("build", flag.ExitOnError)
 	buildDry := buildCmd.Bool("dry", false, "dry run of the build without invoking ko")
-	buildEnv := buildCmd.String("env", "", "env variables for ko")
+	buildEnv := buildCmd.String("envs", "", "env variables for ko")
 	buildArgs := buildCmd.String("args", "", "arguments for ko")
 
 	// Predicate command.

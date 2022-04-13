@@ -286,19 +286,19 @@ jobs:
               if [[ -z "$UNTRUSTED_ENVS" ]]
               then
                 echo ./"$BUILDER_BINARY" build
-                IMAGE=$(./"$BUILDER_BINARY" build)
+                IMAGE=$(./"$BUILDER_BINARY" build | tail -1)
               else
                 echo ./"$BUILDER_BINARY" build --envs "$UNTRUSTED_ENVS"
-                IMAGE=$(./"$BUILDER_BINARY" build --envs "$UNTRUSTED_ENVS")
+                IMAGE=$(./"$BUILDER_BINARY" build --envs "$UNTRUSTED_ENVS"  | tail -1)
               fi
           else
               if [[ -z "$UNTRUSTED_ENVS" ]]
               then
                 echo ./"$BUILDER_BINARY" build --args "$UNTRUSTED_ARGS"
-                IMAGE=$(./"$BUILDER_BINARY" build --args "$UNTRUSTED_ARGS")
+                IMAGE=$(./"$BUILDER_BINARY" build --args "$UNTRUSTED_ARGS"  | tail -1)
               else
                 echo ./"$BUILDER_BINARY" build --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
-                IMAGE=$(./"$BUILDER_BINARY" build --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS")
+                IMAGE=$(./"$BUILDER_BINARY" build --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"  | tail -1)
               fi
           fi
           

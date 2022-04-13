@@ -289,6 +289,7 @@ jobs:
       UNTRUSTED_PASSWORD: "${{ secrets.password }}"
       UNTRUSTED_USERNAME: "${{ inputs.username }}"
       BUILDER_HASH: "${{ needs.builder.outputs.builder-sha256 }}"
+      GITHUB_CONTEXT: "${{ toJSON(github) }}"
     steps:
       - name: Download builder
         uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v2.1.0

@@ -178,9 +178,9 @@ jobs:
           
           # TODO: verify hash
           echo "running the builder $BUILDER_BINARY with hash $BUILDER_HASH"
-          echo ./"$BUILDER_BINARY" predicate --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
+          echo ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
           # Note: this will print command and envs.
-          ./"$BUILDER_BINARY" predicate --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
+          ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
   
   ###################################################################
   #                                                                 #
@@ -251,10 +251,9 @@ jobs:
           set -euo pipefail
           
           #TODO: run
-          echo ./"$BUILDER_BINARY" --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
+          echo ./"$BUILDER_BINARY" build --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
 
           # Note: this will print command and envs.
-          ./"$BUILDER_BINARY" predicate --dry-run --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
           # Note: this will be done in Go via an exec and to set up env variables.
           # Note 2: we will use a dry-run to generate the command for provenance in a separate job.
           # Note 3: we will use the value provided by the user and set env autoatically, so we

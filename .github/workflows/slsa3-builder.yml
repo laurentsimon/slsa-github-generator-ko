@@ -264,9 +264,9 @@ jobs:
         run: |
           set -euo pipefail
                     
-          echo "login to $REGISTRY"
+          echo "login to $UNTRUSTED_REGISTRY"
 
-          ko login "$REGISTRY" -u "$UNTRUSTED_USERNAME" -p "$UNTRUSTED_PASSWORD"
+          ko login "$UNTRUSTED_REGISTRY" -u "$UNTRUSTED_USERNAME" -p "$UNTRUSTED_PASSWORD"
 
       - name: Build and push
         id: build-push
@@ -380,9 +380,9 @@ jobs:
         run: |
           set -euo pipefail
                     
-          echo "login to $REGISTRY"
+          echo "login to $UNTRUSTED_REGISTRY"
 
-          cosign login "$REGISTRY" -u "$UNTRUSTED_USERNAME" -p "$UNTRUSTED_PASSWORD"
+          cosign login "$UNTRUSTED_REGISTRY" -u "$UNTRUSTED_USERNAME" -p "$UNTRUSTED_PASSWORD"
           
       - name: Upload
         env:

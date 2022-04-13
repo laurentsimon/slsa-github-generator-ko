@@ -182,29 +182,29 @@ jobs:
             --args "$UNTRUSTED_ARGS" \
             --envs "$UNTRUSTED_ENVS"
 
-          echo ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
-          ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
+          # echo ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
+          # ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
           
-          # if [[ -z "$UNTRUSTED_ARGS" ]]
-          # then
-          #     if [[ -z "$UNTRUSTED_ENVS" ]]
-          #     then
-          #       echo ./"$BUILDER_BINARY" build --dry
-          #       ./"$BUILDER_BINARY" build --dry
-          #     else
-          #         echo ./"$BUILDER_BINARY" build --dry --envs "$UNTRUSTED_ENVS"
-          #        ./"$BUILDER_BINARY" build --dry --envs "$UNTRUSTED_ENVS"
-          #     fi
-          # else
-          #     if [[ -z "$UNTRUSTED_ENVS" ]]
-          #     then
-          #       echo ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS"
-          #        ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS"
-          #     else
-          #         echo ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
-          #        ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
-          #     fi
-          # fi
+          if [[ -z "$UNTRUSTED_ARGS" ]]
+          then
+              if [[ -z "$UNTRUSTED_ENVS" ]]
+              then
+                echo ./"$BUILDER_BINARY" build --dry
+                ./"$BUILDER_BINARY" build --dry
+              else
+                  echo ./"$BUILDER_BINARY" build --dry --envs "$UNTRUSTED_ENVS"
+                 ./"$BUILDER_BINARY" build --dry --envs "$UNTRUSTED_ENVS"
+              fi
+          else
+              if [[ -z "$UNTRUSTED_ENVS" ]]
+              then
+                echo ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS"
+                 ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS"
+              else
+                  echo ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
+                 ./"$BUILDER_BINARY" build --dry --args "$UNTRUSTED_ARGS" --envs "$UNTRUSTED_ENVS"
+              fi
+          fi
   
   ###################################################################
   #                                                                 #
@@ -382,7 +382,6 @@ jobs:
           
           cosign login "${{ env.DOCKER_REGISTRY }}" -u "$UNTRUSTED_USERNAME" -p "$UNTRUSTED_PASSWORD"
           
-      #- uses: sigstore/cosign-installer@d6a3abf1bdea83574e28d40543793018b6035605
       - name: Upload
         env:
           UNTRUSTED_PREDICATE: "${{ steps.gen-predicate.outputs.predicate }}"

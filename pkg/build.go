@@ -159,6 +159,12 @@ func (b *KoBuild) generateRegistry() (string, error) {
 		return "", fmt.Errorf("%w: %s", errorInvalidRegistry, registry)
 	}
 
+	// A non-separated string indicates a docker username
+	// https://github.com/google/ko#choose-destination.
+	if len(parts) == 1 {
+		return dockerRegistry, nil
+	}
+
 	return strings.Trim(parts[0], " "), nil
 }
 

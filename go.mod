@@ -3,6 +3,7 @@ module github.com/laurentsimon/slsa-github-generator-ko/builder
 go 1.17
 
 require (
+	github.com/google/go-cmp v0.5.7
 	github.com/in-toto/in-toto-golang v0.3.4-0.20211211042327-af1f9fb822bf
 	github.com/sigstore/cosign v1.7.2
 	github.com/sigstore/sigstore v1.2.1-0.20220401110139-0e610e39782f
@@ -86,7 +87,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/go-cmp v0.5.7 // indirect
 	github.com/google/go-containerregistry v0.8.1-0.20220209165246-a44adc326839 // indirect
 	github.com/google/go-github/v42 v42.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect

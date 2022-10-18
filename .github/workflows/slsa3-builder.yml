@@ -7,8 +7,8 @@ env:
   # Builder
   BUILDER_BINARY: builder
   # Ko
-  KO_HASH: afb5dacb44bfeafdc53c6de03d9ff74f4a6003c5617381d3139038aa25f3fb66
-  KO_VERSION: 0.11.2
+  KO_HASH: 05aa77182fa7c55386bd2a210fd41298542726f33bbfc9c549add3a66f7b90ad
+  KO_VERSION: 0.12.0
 
 ###################################################################
 #                                                                 #
